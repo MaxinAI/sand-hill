@@ -35,17 +35,18 @@ const SWAP_ROUTER = new ethers.Contract(
 
 describe("Vault", function () {
     async function getSigners() {
-        const [deployer, admin, beneficiary, feeRecipient, other] = await ethers.getSigners();
+        const [deployer, admin, beneficiary, feeRecipient, developer, other] = await ethers.getSigners();
         return {deployer, admin, beneficiary};
     }
 
     async function deployVault() {
-        const [deployer, admin, beneficiary, feeRecipient] = await ethers.getSigners();
+        const [deployer, admin, beneficiary, feeRecipient, developer] = await ethers.getSigners();
         const Vault = await ethers.getContractFactory("Vault");
         const vault = await Vault.deploy(
             admin.address,
             beneficiary.address,
             feeRecipient.address,
+            developer.address,
             SWAP_ROUTER,
         );
         return {vault, deployer, admin, beneficiary};

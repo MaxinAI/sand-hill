@@ -22,6 +22,7 @@ contract Vault {
     address public immutable admin;
     address public immutable beneficiary;
     address public immutable feeRecipient;
+    address public immutable developer;
     uint public immutable expiration;
 
     uint public stableSold;
@@ -35,10 +36,11 @@ contract Vault {
 
     uint24 public constant feeTier = 500;
 
-    constructor(address _admin, address _beneficiary, address _feeRecipient, address _swapRouter) {
+    constructor(address _admin, address _beneficiary, address _feeRecipient, address _developer, address _swapRouter) {
         admin = _admin;
         beneficiary = _beneficiary;
         feeRecipient = _feeRecipient;
+        developer = _developer;
         expiration = block.timestamp + EXPIRY;
         swapRouter = ISwapRouter(_swapRouter);
     }
@@ -71,8 +73,6 @@ contract Vault {
         require(!sellingCrypto, "Already selling crypto");
         require(_token == WETH || _token == WBTC, "Invalid token");
 
-        uint stableBalance = IERC20(USDC).balanceOf(address(this));
-
         // Actual swap
         safeApprove(USDC, address(swapRouter), _amount);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -85,19 +85,14 @@ contract Vault {
             amountOutMinimum: _crypto,
             sqrtPriceLimitX96: 0
         });
-        uint amountOut = swapRouter.exactInputSingle(params);
-        require(amountOut > _crypto, "Swap failed");
+        swapRouter.exactInputSingle(params);
 
-        uint currentStableBalance = IERC20(USDC).balanceOf(address(this));
-        require(stableBalance > currentStableBalance, "Not swapped");
-        stableSold += stableBalance - currentStableBalance;
+        stableSold += _amount;
     }
 
     function sell(uint _crypto, uint _amount, address _token) external onlyAdmin {
         require(sellingCrypto, "Not selling crypto");
         require(_token == WETH || _token == WBTC, "Invalid token");
-
-        uint stableBalance = IERC20(USDC).balanceOf(address(this));
 
         safeApprove(_token, address(swapRouter), _crypto);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
@@ -111,11 +106,7 @@ contract Vault {
             sqrtPriceLimitX96: 0
         });
         uint amountOut = swapRouter.exactInputSingle(params);
-        require(amountOut > _amount, "Swap failed");
-
-        uint currentStableBalance = IERC20(USDC).balanceOf(address(this));
-        require(currentStableBalance > stableBalance, "Not swapped");
-        stableBought += currentStableBalance - stableBalance;
+        stableBought += amountOut;
     }
 
     function sellCrypto() external onlyAdmin {
@@ -128,7 +119,10 @@ contract Vault {
         if (stableBought > stableSold) {
             uint profit = stableBought - stableSold;
             uint fee = (profit * 20) / 100;
-            require(IERC20(USDC).transfer(feeRecipient, fee));
+            uint developerFee = (profit * 20) / 100; // 20% goes to developer
+            uint fundFee = fee- developerFee; // 80% goes to fund address
+            require(IERC20(USDC).transfer(feeRecipient, fundFee));
+            require(IERC20(USDC).transfer(developer, developerFee));
         }
         unlocked = true;
     }
@@ -153,6 +147,7 @@ contract Vault {
 contract VaultManager {
     address public immutable admin;
     address public immutable feeRecipient;
+    address public immutable developer;
     address public constant swapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     address[] public vaults;
@@ -164,7 +159,7 @@ contract VaultManager {
 
     function createVault(address beneficiary) external returns (address) {
         require(msg.sender == admin, "Only admin can call this");
-        Vault vault = new Vault(admin, beneficiary, feeRecipient, swapRouter);
+        Vault vault = new Vault(admin, beneficiary, feeRecipient, developer, swapRouter);
         vaults.push(address(vault));
         return address(vault);
     }
