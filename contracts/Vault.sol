@@ -55,19 +55,26 @@ contract Vault {
         _;
     }
 
-    /// @notice Approves the stipulated contract to spend the given allowance in the given token
-    /// @dev Errors with 'SA' if transfer fails
-    /// @param token The contract address of the token to be approved
-    /// @param to The target of the approval
-    /// @param value The amount of the given token the target will be allowed to spend
-    function safeApprove(
-        address token,
-        address to,
-        uint256 value
-    ) internal {
+
+    /// Internals
+
+    function safeApprove(address token, address to, uint256 value) internal {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(IERC20.approve.selector, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), "Not approved");
     }
+
+    function distributeFees() internal {
+        if (stableBought > stableSold) {
+            uint profit = stableBought - stableSold;
+            uint fee = (profit * 20) / 100;
+            uint developerFee = (profit * 20) / 100; // 20% goes to developer
+            uint fundFee = fee - developerFee; // 80% goes to fund address
+            require(IERC20(USDC).transfer(feeRecipient, fundFee));
+            require(IERC20(USDC).transfer(developer, developerFee));
+        }
+    }
+
+    /// Admin operations
 
     function buy(uint _amount, uint _crypto, address _token) external onlyAdmin {
         require(!sellingCrypto, "Already selling crypto");
@@ -114,19 +121,14 @@ contract Vault {
         sellingCrypto = true;
     }
 
+
     function unlock() external onlyAdmin {
         require(!unlocked, "Already unlocked");
-        if (stableBought > stableSold) {
-            uint profit = stableBought - stableSold;
-            uint fee = (profit * 20) / 100;
-            uint developerFee = (profit * 20) / 100; // 20% goes to developer
-            uint fundFee = fee- developerFee; // 80% goes to fund address
-            require(IERC20(USDC).transfer(feeRecipient, fundFee));
-            require(IERC20(USDC).transfer(developer, developerFee));
-        }
+        distributeFees();
         unlocked = true;
     }
 
+    // Beneficiary operations
     function transferOut(address _token) internal {
         IERC20 tokenContract = IERC20(_token);
         uint tokenBalance = tokenContract.balanceOf(address(this));
@@ -137,7 +139,10 @@ contract Vault {
 
     function withdraw() external onlyBeneficiary {
         require(unlocked || block.timestamp >= expiration, "Cannot withdraw now");
-
+        if (!unlocked) {
+            unlocked = true;
+            distributeFees();
+        }
         transferOut(USDC);
         transferOut(WETH);
         transferOut(WBTC);
