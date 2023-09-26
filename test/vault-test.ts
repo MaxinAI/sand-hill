@@ -58,6 +58,7 @@ describe("Vault", function () {
         const vaultManager = await VaultManager.deploy(
             admin.address,
             feeRecipient.address,
+            developer.address,
         );
         return {vaultManager, deployer, admin, beneficiary, feeRecipient, developer, other};
     }
