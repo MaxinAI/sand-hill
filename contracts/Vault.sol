@@ -158,9 +158,10 @@ contract VaultManager {
 
     address[] public vaults;
 
-    constructor(address _admin, address _feeRecipient) {
+    constructor(address _admin, address _feeRecipient, address _developer) {
         admin = _admin;
         feeRecipient = _feeRecipient;
+        developer = _developer;
     }
 
     function createVault(address beneficiary) external returns (address) {

@@ -36,11 +36,11 @@ const SWAP_ROUTER = new ethers.Contract(
 describe("Vault", function () {
     async function getSigners() {
         const [deployer, admin, beneficiary, feeRecipient, developer, other] = await ethers.getSigners();
-        return {deployer, admin, beneficiary};
+        return {deployer, admin, beneficiary, feeRecipient, developer, other};
     }
 
     async function deployVault() {
-        const [deployer, admin, beneficiary, feeRecipient, developer] = await ethers.getSigners();
+        const [deployer, admin, beneficiary, feeRecipient, developer, other] = await ethers.getSigners();
         const Vault = await ethers.getContractFactory("Vault");
         const vault = await Vault.deploy(
             admin.address,
@@ -49,17 +49,17 @@ describe("Vault", function () {
             developer.address,
             SWAP_ROUTER,
         );
-        return {vault, deployer, admin, beneficiary};
+        return {vault, deployer, admin, beneficiary, feeRecipient, developer, other};
     }
 
     async function deployVaultManager() {
-        const [deployer, admin, feeRecipient] = await ethers.getSigners();
+        const [deployer, admin, beneficiary, feeRecipient, developer, other] = await ethers.getSigners();
         const VaultManager = await ethers.getContractFactory("VaultManager");
         const vaultManager = await VaultManager.deploy(
             admin.address,
             feeRecipient.address,
         );
-        return {vaultManager, deployer, admin};
+        return {vaultManager, deployer, admin, beneficiary, feeRecipient, developer, other};
     }
 
     describe("Deploy Vault", function () {
@@ -140,8 +140,6 @@ describe("Vault", function () {
             await vault.connect(beneficiary).withdraw();
             const veryVeryFinalUsdcBalance = await USDC.balanceOf(beneficiary.address);
             expect(veryVeryFinalUsdcBalance).to.be.gt(beneficiaryUsdcBalance);
-
-
         });
     });
 
