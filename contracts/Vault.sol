@@ -129,6 +129,7 @@ contract Vault {
     }
 
     // Beneficiary operations
+
     function transferOut(address _token) internal {
         IERC20 tokenContract = IERC20(_token);
         uint tokenBalance = tokenContract.balanceOf(address(this));
