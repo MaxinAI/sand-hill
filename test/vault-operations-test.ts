@@ -199,7 +199,7 @@ describe("Vault Operations", function () {
 
         const developerBalanceBefore = await USDC.balanceOf(developer.address);
         const feeRecipientBalanceBefore = await USDC.balanceOf(feeRecipient.address);
-
+        const vaultBalance = await USDC.balanceOf(vaultAddress);
         await vault.connect(admin).unlock()
 
         const developerBalanceAfter = await USDC.balanceOf(developer.address);
@@ -211,7 +211,7 @@ describe("Vault Operations", function () {
         await vault.connect(beneficiary).withdraw();
 
         const beneficiaryBalance = await USDC.balanceOf(beneficiary.address);
-        expect(usdcBalance).to.eq(beneficiaryBalance);
+        expect(vaultBalance).to.eq(beneficiaryBalance);
     });
 
 });
