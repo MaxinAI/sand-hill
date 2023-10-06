@@ -8,7 +8,7 @@ describe("Vault Administration", function () {
         it("Should be able to buy crypto", async () => {
             const {vault, admin, usdcBalance, vaultAddress} = await deployAndCreateVaultAndFill();
             await vault.connect(admin).buy(usdcBalance, 0n, WETH_ADDRESS)
-            expect(await WETH.balanceOf(vaultAddress)).to.be.gt(0n);
+            expect(await WETH.balanceOf(vaultAddress)).to.gt(0n);
         });
 
         it("Should not be able to buy crypto if sell enabled", async () => {
@@ -33,20 +33,20 @@ describe("Vault Administration", function () {
             await vault.connect(admin).buy(usdcBalance, 0n, WETH_ADDRESS)
 
             const ethBalanceBefore = await WETH.balanceOf(vaultAddress);
-            expect(ethBalanceBefore).to.be.gt(0n);
+            expect(ethBalanceBefore).to.gt(0n);
 
             const usdcBalanceBefore = await USDC.balanceOf(vaultAddress);
-            expect(usdcBalanceBefore).to.be.eq(0n);
+            expect(usdcBalanceBefore).to.eq(0n);
 
             await vault.connect(admin).enableSell();
 
             await vault.connect(admin).sell(ethBalanceBefore, 0n, WETH_ADDRESS)
 
             const usdcBalanceAfter = await USDC.balanceOf(vaultAddress);
-            expect(usdcBalanceAfter).to.be.gt(0n);
+            expect(usdcBalanceAfter).to.gt(0n);
 
             const ethBalanceAfter = await WETH.balanceOf(vaultAddress);
-            expect(ethBalanceAfter).to.be.eq(0n);
+            expect(ethBalanceAfter).to.eq(0n);
         });
 
         it("Should not be able to sell crypto if sell not enabled", async () => {

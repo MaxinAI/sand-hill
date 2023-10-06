@@ -9,7 +9,7 @@ describe("Deployment", function () {
 
     describe("Deploy Vault", function () {
         it("Should be deployed", async function () {
-            const {vault} = await loadFixture(deployVault);
+            const {vault} = await deployVault();
             await vault.waitForDeployment();
             const vaultAddress = await vault.getAddress()
 
@@ -19,7 +19,7 @@ describe("Deployment", function () {
 
     describe("Deploy Vault Manager", function () {
         it("Should be deployed", async function () {
-            const {vaultManager, admin} = await loadFixture(deployVaultManager);
+            const {vaultManager, admin} = await deployVaultManager();
             await vaultManager.waitForDeployment();
             const vaultManagerAddress = await vaultManager.getAddress()
 
@@ -29,7 +29,7 @@ describe("Deployment", function () {
 
     describe("Create Vault", function () {
         it("Should be able to create vault", async () => {
-            const {vaultManager, admin, beneficiary} = await loadFixture(deployVaultManager);
+            const {vaultManager, admin, beneficiary} = await deployVaultManager();
             await vaultManager.waitForDeployment();
 
             await vaultManager.connect(admin).createVault(beneficiary.address, 1000n);
@@ -39,14 +39,14 @@ describe("Deployment", function () {
         });
 
         it("Should throw error if non-admin creates Vault", async () => {
-            const {vaultManager, other, beneficiary} = await loadFixture(deployVaultManager);
+            const {vaultManager, other, beneficiary} = await deployVaultManager();
             await vaultManager.waitForDeployment();
 
             await expect(vaultManager.connect(other).createVault(beneficiary.address, 1000n)).to.revertedWith("VaultManager: Only admin can create Vault");
         });
 
         it("Should be able to create several vaults", async () => {
-            const {vaultManager, admin, beneficiary} = await loadFixture(deployVaultManager);
+            const {vaultManager, admin, beneficiary} = await deployVaultManager();
             await vaultManager.waitForDeployment();
 
             await vaultManager.connect(admin).createVault(beneficiary.address, 1000n);
