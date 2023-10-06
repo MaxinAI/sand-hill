@@ -1,4 +1,5 @@
 import {ethers} from "hardhat";
+import {Contract} from "ethers";
 
 export const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 export const WETH = new ethers.Contract(
@@ -59,4 +60,18 @@ export async function deployVaultManager() {
         developer.address,
     );
     return {vaultManager, deployer, admin, beneficiary, feeRecipient, developer, other};
+}
+
+export async function exchange(signer, tokenA: Contract, tokenB: Contract ,amount) {
+    await tokenA.connect(signer).approve(SWAP_ROUTER_ADDRESS, amount);
+    await SWAP_ROUTER.connect(signer).exactInputSingle([
+        await tokenA.getAddress(),
+        await tokenB.getAddress(),
+        500n,
+        signer.address,
+        ethers.MaxUint256,
+        amount,
+        0n,
+        0n,
+    ])
 }
