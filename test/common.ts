@@ -70,7 +70,18 @@ export async function deployAndCreateVault(expiry=1000n) {
     const vaultAddress = await vaultManager.vaults(0);
     const vault = await ethers.getContractAt("Vault", vaultAddress);
 
-    return {vault, deployer, admin, beneficiary, feeRecipient, developer, other};
+    return {vault, vaultAddress, deployer, admin, beneficiary, feeRecipient, developer, other};
+}
+
+export async function deployAndCreateVaultAndFill(expiry=1000n, amount=ethers.parseEther("1")) {
+    const {vault, vaultAddress, deployer, admin, beneficiary, feeRecipient, developer, other} = await deployAndCreateVault();
+
+    await wrap(beneficiary, amount);
+    await exchange(beneficiary, WETH, USDC, amount);
+    const usdcBalance = await USDC.balanceOf(beneficiary.address);
+    await USDC.connect(beneficiary).transfer(vaultAddress, usdcBalance);
+
+    return {vault, vaultAddress, deployer, admin, beneficiary, feeRecipient, developer, other, usdcBalance};
 }
 
 export async function wrap(signer, amount) {

@@ -34,7 +34,7 @@ contract Vault {
 
     uint public stableSold;
     uint public stableBought;
-    bool public sellingCrypto;
+    bool public sellEnabled;
     bool public unlocked;
 
     address public constant SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
@@ -86,11 +86,11 @@ contract Vault {
     /// Admin operations
 
     function buy(uint _amount, uint _expectedMin, address _token) external onlyAdmin {
-        require(!sellingCrypto, "Vault: You can only sell crypto currency");
+        require(!sellEnabled, "Vault: You can only sell crypto currency");
         require(_token == WETH || _token == WBTC, "Vault: You can only buy WBTC or WETH");
 
         // Actual swap
-        require(IERC20(USDC).approve(address(SWAP_ROUTER), _amount), "Vault: Not approved");
+        IERC20(USDC).approve(SWAP_ROUTER, _amount);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: USDC,
             tokenOut: _token,
@@ -107,10 +107,10 @@ contract Vault {
     }
 
     function sell(uint _amount, uint _expectedMin, address _token) external onlyAdmin {
-        require(sellingCrypto, "Vault: Selling crypto currency is no enabled");
+        require(sellEnabled, "Vault: Selling crypto currency is not enabled");
         require(_token == WETH || _token == WBTC, "Vault: Invalid token, you can only sell WBTC or WETH");
 
-        require(IERC20(_token).approve(address(SWAP_ROUTER), _amount), "Vault: Not approved");
+        IERC20(_token).approve(SWAP_ROUTER, _amount);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: _token,
             tokenOut: USDC,
@@ -126,8 +126,8 @@ contract Vault {
     }
 
     function enableSell() external onlyAdmin {
-        require(!sellingCrypto, "Vault: Selling crypto currency is already enabled");
-        sellingCrypto = true;
+        require(!sellEnabled, "Vault: Selling crypto currency is already enabled");
+        sellEnabled = true;
     }
 
 

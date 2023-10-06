@@ -63,4 +63,15 @@ describe("Vault Operations", function () {
         assert.fail("Not implemented");
     });
 
+    it("Should calculate profit", async () => {
+        assert.fail("Not implemented");
+    });
+
+    it("Should distribute fees when there is profit", async () => {
+        assert.fail("Not implemented");
+    });
+
+    it("Should not distribute fees when there is no profit", async () => {
+        assert.fail("Not implemented");
+    });
 });
