@@ -1,5 +1,6 @@
 import {ethers} from "hardhat";
 import {Contract} from "ethers";
+import {expect} from "chai";
 
 export const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 export const WETH = new ethers.Contract(
@@ -60,6 +61,20 @@ export async function deployVaultManager() {
         developer.address,
     );
     return {vaultManager, deployer, admin, beneficiary, feeRecipient, developer, other};
+}
+
+export async function deployAndCreateVault(expiry=1000n) {
+    const {vaultManager, deployer, admin, beneficiary, feeRecipient, developer, other} = await deployVaultManager();
+    await vaultManager.waitForDeployment();
+    await vaultManager.connect(admin).createVault(beneficiary.address, expiry);
+    const vaultAddress = await vaultManager.vaults(0);
+    const vault = await ethers.getContractAt("Vault", vaultAddress);
+
+    return {vault, deployer, admin, beneficiary, feeRecipient, developer, other};
+}
+
+export async function wrap(signer, amount) {
+    await WETH.connect(signer).deposit({value: amount});
 }
 
 export async function exchange(signer, tokenA: Contract, tokenB: Contract ,amount) {

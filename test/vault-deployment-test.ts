@@ -4,7 +4,7 @@ import {expect} from "chai";
 import {deployVault, deployVaultManager, getSigners} from "./common";
 
 
-describe("Vault", function () {
+describe("Deployment", function () {
 
 
     describe("Deploy Vault", function () {

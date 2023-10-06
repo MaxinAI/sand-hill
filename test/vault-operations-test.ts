@@ -1,29 +1,22 @@
 import {loadFixture} from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import {ethers} from "hardhat";
 import {expect} from "chai";
-import {deployVaultManager, exchange, getSigners, USDC, WETH, WETH_ADDRESS} from "./common";
+import {deployAndCreateVault, deployVaultManager, exchange, getSigners, USDC, WETH, WETH_ADDRESS, wrap} from "./common";
+import * as assert from "assert";
 
 
-describe("Vault Deposit, Trade, Withdraw", function () {
+describe("Vault Operations", function () {
 
-    it("Should be able to deposit, trade and withdraw", async function () {
+    it("Should be able to withdraw", async function () {
 
-        const {vaultManager, admin} = await loadFixture(deployVaultManager);
-        await vaultManager.waitForDeployment();
-        const {beneficiary} = await getSigners();
-
-        await vaultManager.connect(admin).createVault(beneficiary.address, 1000n);
-
-        const vaultAddress = await vaultManager.vaults(0);
+        const {vault, admin, beneficiary} = await loadFixture(deployAndCreateVault);
+        const vaultAddress = await vault.getAddress();
         expect(vaultAddress).to.not.equal(ethers.ZeroAddress);
-
-        const vault = await ethers.getContractAt("Vault", vaultAddress);
 
         // Wrap ETH
         const amount = ethers.parseEther("1");
-        await WETH.connect(beneficiary).deposit({value: amount});
+        await wrap(beneficiary, amount);
         expect(await WETH.balanceOf(beneficiary.address)).to.be.equal(amount);
-
 
         const usdcBalance = await USDC.balanceOf(beneficiary.address);
         expect(usdcBalance).to.be.equal(0n);
@@ -60,6 +53,14 @@ describe("Vault Deposit, Trade, Withdraw", function () {
         await vault.connect(beneficiary).withdraw();
         const veryVeryFinalUsdcBalance = await USDC.balanceOf(beneficiary.address);
         expect(veryVeryFinalUsdcBalance).to.be.gt(beneficiaryUsdcBalance);
+    });
+
+    it("Should not be able to withdraw w/o unlock and before expiration", async function () {
+        assert.fail("Not implemented");
+    });
+
+    it("Should be able to withdraw w/o unlock but after expiration", async function () {
+        assert.fail("Not implemented");
     });
 
 });
