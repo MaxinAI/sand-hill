@@ -23,9 +23,12 @@ Implemented
 -------------------------------------------------------------------------------------
 
 > IWETH is not used, as non-wrapped Eth is not used in operations
-```interface IWETH is IERC20 {
+```
+interface IWETH is IERC20 {
 function deposit() external payable;
-}```
+}
+```
+
 
 Removed
 
@@ -79,10 +82,11 @@ Right
 
 -------------------------------------------------------------------------------------
 > mb this would be more concise:
-```if (!unlocked) {
+```
+if (!unlocked) {
 unlock()
-}```
-
+}
+```
 
 Unlock is only for admin, left as is
 
