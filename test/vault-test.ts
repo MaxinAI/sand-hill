@@ -1,67 +1,20 @@
 import {loadFixture} from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import {ethers} from "hardhat";
 import {expect} from "chai";
-
-const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-const WETH = new ethers.Contract(
-    WETH_ADDRESS,
-    [
-        "function deposit() payable",
-        "function balanceOf(address) view returns (uint)",
-        "function transfer(address, uint) returns (bool)",
-        "function approve(address, uint) returns (bool)"
-    ],
-    ethers.provider,
-)
-
-const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const USDC = new ethers.Contract(
-    USDC_ADDRESS,
-    [
-        "function balanceOf(address) view returns (uint)",
-        "function transfer(address, uint) returns (bool)"
-    ],
-    ethers.provider,
-)
-
-const SWAP_ROUTER_ADDRESS = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
-const SWAP_ROUTER = new ethers.Contract(
+import {
+    deployVault,
+    deployVaultManager,
+    getSigners,
+    SWAP_ROUTER,
     SWAP_ROUTER_ADDRESS,
-    [
-        "function exactInputSingle(tuple(address,address,uint24,address,uint,uint,uint,uint160)) payable returns (uint)"
-    ],
-    ethers.provider,
-)
+    USDC, USDC_ADDRESS,
+    WETH,
+    WETH_ADDRESS
+} from "./common";
+
 
 describe("Vault", function () {
-    async function getSigners() {
-        const [deployer, admin, beneficiary, feeRecipient, developer, other] = await ethers.getSigners();
-        return {deployer, admin, beneficiary, feeRecipient, developer, other};
-    }
 
-    async function deployVault() {
-        const [deployer, admin, beneficiary, feeRecipient, developer, other] = await ethers.getSigners();
-        const Vault = await ethers.getContractFactory("Vault");
-        const vault = await Vault.deploy(
-            admin.address,
-            beneficiary.address,
-            feeRecipient.address,
-            developer.address,
-            1000n,
-        );
-        return {vault, deployer, admin, beneficiary, feeRecipient, developer, other};
-    }
-
-    async function deployVaultManager() {
-        const [deployer, admin, beneficiary, feeRecipient, developer, other] = await ethers.getSigners();
-        const VaultManager = await ethers.getContractFactory("VaultManager");
-        const vaultManager = await VaultManager.deploy(
-            admin.address,
-            feeRecipient.address,
-            developer.address,
-        );
-        return {vaultManager, deployer, admin, beneficiary, feeRecipient, developer, other};
-    }
 
     describe("Deploy Vault", function () {
         it("Should be deployed", async function () {
