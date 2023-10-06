@@ -32,8 +32,8 @@ contract Vault {
     address public immutable developer;
     uint public immutable expiration;
 
-    uint public stableSold;
-    uint public stableBought;
+    uint public stablesSold;
+    uint public stablesBought;
     bool public sellEnabled;
     bool public unlocked;
 
@@ -73,8 +73,8 @@ contract Vault {
     /// Internals
 
     function distributeFees() internal {
-        if (stableBought > stableSold) {
-            uint profit = stableBought - stableSold;
+        if (stablesBought > stablesSold) {
+            uint profit = stablesBought - stablesSold;
             uint fee = (profit * 20) / 100;
             uint developerFee = (fee * 20) / 100; // 20% from fee goes to developer
             uint fundFee = fee - developerFee; // 80% goes to fund address
@@ -103,7 +103,7 @@ contract Vault {
         });
         ISwapRouter(SWAP_ROUTER).exactInputSingle(params);
 
-        stableSold += _amount;
+        stablesSold += _amount;
     }
 
     function sell(uint _amount, uint _expectedMin, address _token) external onlyAdmin {
@@ -122,7 +122,7 @@ contract Vault {
             sqrtPriceLimitX96: 0
         });
         uint amountOut = ISwapRouter(SWAP_ROUTER).exactInputSingle(params);
-        stableBought += amountOut;
+        stablesBought += amountOut;
     }
 
     function enableSell() external onlyAdmin {

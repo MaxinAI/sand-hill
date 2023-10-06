@@ -1,7 +1,15 @@
-import {loadFixture} from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import {ethers} from "hardhat";
+import {ethers, network} from "hardhat";
 import {expect} from "chai";
-import {deployAndCreateVault, deployVaultManager, exchange, getSigners, USDC, WETH, WETH_ADDRESS, wrap} from "./common";
+import {
+    deployAndCreateVault,
+    deployAndCreateVaultAndFill,
+    exchange,
+    USDC,
+    WBTC,
+    WETH,
+    WETH_ADDRESS,
+    wrap
+} from "./common";
 import * as assert from "assert";
 
 
@@ -9,7 +17,7 @@ describe("Vault Operations", function () {
 
     it("Should be able to withdraw", async function () {
 
-        const {vault, admin, beneficiary} = await deployAndCreateVault;
+        const {vault, admin, beneficiary} = await deployAndCreateVault();
         const vaultAddress = await vault.getAddress();
         expect(vaultAddress).to.not.equal(ethers.ZeroAddress);
 
@@ -55,19 +63,58 @@ describe("Vault Operations", function () {
         expect(veryVeryFinalUsdcBalance).to.gt(beneficiaryUsdcBalance);
     });
 
-    it("Should not be able to withdraw w/o unlock and before expiration", async function () {
+    it("Should be able to withdraw all tokens", async function () {
+        const {vault, vaultAddress, admin, beneficiary, other} = await deployAndCreateVault();
+        await wrap(other, ethers.parseEther("3"));
+        await exchange(other, WETH, USDC, ethers.parseEther("1"));
+        await exchange(other, WETH, WBTC, ethers.parseEther("1"));
 
+        const vaultWethBalance = await WETH.balanceOf(other);
+        const vaultUsdcBalance = await USDC.balanceOf(other);
+        const vaultWbtcBalance = await WBTC.balanceOf(other);
+
+        const startWethBalance = await WETH.balanceOf(beneficiary);
+        const startUsdcBalance = await USDC.balanceOf(beneficiary);
+        const startWbtcBalance = await WBTC.balanceOf(beneficiary);
+
+        expect(vaultWethBalance).to.gt(0n);
+        expect(vaultUsdcBalance).to.gt(0n);
+        expect(vaultWbtcBalance).to.gt(0n);
+
+        await WETH.connect(other).transfer(vaultAddress, vaultWethBalance);
+        await USDC.connect(other).transfer(vaultAddress, vaultUsdcBalance);
+        await WBTC.connect(other).transfer(vaultAddress, vaultWbtcBalance);
+
+        await vault.connect(admin).unlock();
+
+        await vault.connect(beneficiary).withdraw();
+
+        const beneficiaryWethBalance = await WETH.balanceOf(beneficiary.address);
+        const beneficiaryUsdcBalance = await USDC.balanceOf(beneficiary.address);
+        const beneficiaryWbtcBalance = await WBTC.balanceOf(beneficiary.address);
+
+        expect(beneficiaryWethBalance - startWethBalance).to.eq(vaultWethBalance);
+        expect(beneficiaryUsdcBalance - startUsdcBalance).to.eq(vaultUsdcBalance);
+        expect(beneficiaryWbtcBalance - startWbtcBalance).to.eq(vaultWbtcBalance);
     });
 
-    it("Should be able to withdraw w/o unlock but after expiration", async function () {
-        assert.fail("Not implemented");
+
+    it("Should not be able to withdraw w/o unlock and before expiration", async function () {
+        const {vault, beneficiary} = await deployAndCreateVaultAndFill();
+        await expect(vault.connect(beneficiary).withdraw()).to.be.revertedWith("Vault: The vault is locked or not expired yet");
+    });
+
+    it("Should be able to withdraw w/o unlock after expiration", async function () {
+        const {vault, beneficiary} = await deployAndCreateVaultAndFill();
+        await network.provider.send("evm_increaseTime", [10000]);
+        await vault.connect(beneficiary).withdraw()
     });
 
     it("Should calculate profit", async () => {
         assert.fail("Not implemented");
     });
 
-    it("Should distribute fees when there is profit", async () => {
+    it("Should distribute fees if there is profit", async () => {
         assert.fail("Not implemented");
     });
 
