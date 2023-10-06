@@ -1,7 +1,8 @@
 import {expect} from "chai";
 import {deployAndCreateVaultAndFill, USDC, USDC_ADDRESS, WETH, WETH_ADDRESS} from "./common";
-import helpers from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import hardhatConfig from "../hardhat.config";
+
+const helpers = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 
 describe("Vault Administration", function () {

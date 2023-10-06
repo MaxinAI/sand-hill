@@ -1,8 +1,9 @@
-import helpers, {loadFixture} from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import {ethers} from "hardhat";
 import {expect} from "chai";
-import {deployVault, deployVaultManager, getSigners} from "./common";
+import {deployVault, deployVaultManager} from "./common";
 import hardhatConfig from "../hardhat.config";
+
+const helpers = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 
 describe("Deployment", function () {

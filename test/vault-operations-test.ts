@@ -214,4 +214,30 @@ describe("Vault Operations", function () {
         expect(vaultBalance).to.eq(beneficiaryBalance);
     });
 
+    it("Should not be able to withdraw if not allowed", async () => {
+        const {
+            vault,
+            admin,
+        } = await deployAndCreateVaultAndFill();
+        await expect(vault.connect(admin).withdraw()).to.revertedWith("Vault: Only beneficiary can call this");
+    });
+
+    it("Should be able to change beneficiary", async () => {
+        const {
+            vault,
+            beneficiary,
+            other
+        } = await deployAndCreateVaultAndFill();
+        await vault.connect(beneficiary).updateBeneficiary(other.address);
+        expect(await vault.beneficiary()).to.eq(other.address);
+    });
+
+    it("Should not be able to change beneficiary if not allowed", async () => {
+        const {
+            vault,
+            other
+        } = await deployAndCreateVaultAndFill();
+        await expect(vault.connect(other).updateBeneficiary(other.address)).to.revertedWith("Vault: Only beneficiary can call this")
+    });
+
 });
