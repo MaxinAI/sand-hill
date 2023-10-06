@@ -1,8 +1,14 @@
 import {expect} from "chai";
 import {deployAndCreateVaultAndFill, USDC, USDC_ADDRESS, WETH, WETH_ADDRESS} from "./common";
+import helpers from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import hardhatConfig from "../hardhat.config";
 
 
 describe("Vault Administration", function () {
+
+    beforeEach(async function () {
+        await helpers.reset(hardhatConfig.networks?.hardhat?.forking?.url, hardhatConfig.networks?.hardhat?.forking?.blockNumber);
+    })
 
     describe("Do exchange", function () {
         it("Should be able to buy crypto", async () => {

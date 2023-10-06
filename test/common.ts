@@ -1,22 +1,14 @@
 import {ethers} from "hardhat";
 import {Contract} from "ethers";
 
-export const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-export const WETH = new ethers.Contract(
-    WETH_ADDRESS,
-    [
-        "function deposit() payable",
-        "function balanceOf(address) view returns (uint)",
-        "function transfer(address, uint) returns (bool)",
-        "function approve(address, uint) returns (bool)"
-    ],
-    ethers.provider,
-)
-
 const ERC20_ABI = [
     "function balanceOf(address) view returns (uint)",
-    "function transfer(address, uint) returns (bool)"
+    "function transfer(address, uint) returns (bool)",
+    "function approve(address, uint) returns (bool)",
 ]
+
+export const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+export const WETH = new ethers.Contract(WETH_ADDRESS, [...ERC20_ABI, "function deposit() payable"], ethers.provider)
 
 export const WBTC_ADDRESS = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
 export const WBTC = new ethers.Contract(WBTC_ADDRESS, ERC20_ABI, ethers.provider)

@@ -1,11 +1,15 @@
-import {loadFixture} from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import helpers, {loadFixture} from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import {ethers} from "hardhat";
 import {expect} from "chai";
 import {deployVault, deployVaultManager, getSigners} from "./common";
+import hardhatConfig from "../hardhat.config";
 
 
 describe("Deployment", function () {
 
+    beforeEach(async function () {
+        await helpers.reset(hardhatConfig.networks?.hardhat?.forking?.url, hardhatConfig.networks?.hardhat?.forking?.blockNumber);
+    })
 
     describe("Deploy Vault", function () {
         it("Should be deployed", async function () {

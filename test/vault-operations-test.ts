@@ -10,10 +10,16 @@ import {
     WETH_ADDRESS,
     wrap
 } from "./common";
-import * as assert from "assert";
+import hardhatConfig from "../hardhat.config";
+
+const helpers = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 
 describe("Vault Operations", function () {
+
+    beforeEach(async function () {
+        await helpers.reset(hardhatConfig.networks?.hardhat?.forking?.url, hardhatConfig.networks?.hardhat?.forking?.blockNumber);
+    })
 
     it("Should be able to withdraw", async function () {
 
@@ -110,15 +116,102 @@ describe("Vault Operations", function () {
         await vault.connect(beneficiary).withdraw()
     });
 
-    it("Should calculate profit", async () => {
-        assert.fail("Not implemented");
-    });
+    it("Should generate profit and distribute fees", async () => {
+        const {
+            vault,
+            vaultAddress,
+            beneficiary,
+            usdcBalance,
+            admin,
+            feeRecipient,
+            other,
+            developer
+        } = await deployAndCreateVaultAndFill();
+        const sharkBalance = ethers.parseEther("9000")
+        await wrap(other, sharkBalance);
+        await exchange(other, WETH, USDC, sharkBalance);
 
-    it("Should distribute fees if there is profit", async () => {
-        assert.fail("Not implemented");
+        const otherUsdcBalance = await USDC.balanceOf(other.address);
+        await vault.connect(admin).buy(usdcBalance, 0n, WETH_ADDRESS);
+        const stablesSold = await vault.stablesSold();
+        await exchange(other, USDC, WETH, otherUsdcBalance);
+
+        await vault.connect(admin).enableSell();
+
+        const wethBalance = await WETH.balanceOf(vaultAddress);
+        await vault.connect(admin).sell(wethBalance, 0n, WETH_ADDRESS);
+        const stablesBought = await vault.stablesBought();
+
+        expect(stablesBought - stablesSold).to.gt(5_000_000n); // We should get at least 5$ profit
+
+        const profit = stablesBought - stablesSold;
+
+        const fee = (profit * 20n) / 100n;
+
+        const developerFee = (fee * 20n) / 100n;
+        const fundFee = fee - developerFee;
+
+        const developerBalanceBefore = await USDC.balanceOf(developer.address);
+        const feeRecipientBalanceBefore = await USDC.balanceOf(feeRecipient.address);
+        const beneficiaryBalanceBefore = await USDC.balanceOf(beneficiary.address);
+
+        await vault.connect(admin).unlock();
+
+        const developerBalanceAfter = await USDC.balanceOf(developer.address);
+        const feeRecipientBalanceAfter = await USDC.balanceOf(feeRecipient.address);
+
+        expect(developerBalanceAfter - developerBalanceBefore).to.eq(developerFee);
+        expect(feeRecipientBalanceAfter - feeRecipientBalanceBefore).to.eq(fundFee);
+
+        await vault.connect(beneficiary).withdraw();
+
+        const beneficiaryBalanceAfter = await USDC.balanceOf(beneficiary.address);
+        const beneficiaryProfit = profit - developerFee - fundFee;
+        expect(beneficiaryBalanceAfter - beneficiaryBalanceBefore - usdcBalance).to.eq(beneficiaryProfit);
     });
 
     it("Should not distribute fees when there is no profit", async () => {
-        assert.fail("Not implemented");
+        const {
+            vault,
+            vaultAddress,
+            beneficiary,
+            usdcBalance,
+            admin,
+            developer,
+            feeRecipient,
+            other
+        } = await deployAndCreateVaultAndFill();
+        const sharkBalance = ethers.parseEther("9000")
+
+        await vault.connect(admin).buy(usdcBalance, 0n, WETH_ADDRESS);
+        const stablesSold = await vault.stablesSold();
+
+        await vault.connect(admin).enableSell();
+
+        await wrap(other, sharkBalance);
+        await exchange(other, WETH, USDC, sharkBalance);
+
+        const wethBalance = await WETH.balanceOf(vaultAddress);
+        await vault.connect(admin).sell(wethBalance, 0n, WETH_ADDRESS);
+        const stablesBought = await vault.stablesBought();
+
+        expect(stablesSold - stablesBought).to.gt(5_000_000n); // We should get at least 5$ loss
+
+        const developerBalanceBefore = await USDC.balanceOf(developer.address);
+        const feeRecipientBalanceBefore = await USDC.balanceOf(feeRecipient.address);
+
+        await vault.connect(admin).unlock()
+
+        const developerBalanceAfter = await USDC.balanceOf(developer.address);
+        const feeRecipientBalanceAfter = await USDC.balanceOf(feeRecipient.address);
+
+        expect(developerBalanceAfter - developerBalanceBefore).to.eq(0);
+        expect(feeRecipientBalanceAfter - feeRecipientBalanceBefore).to.eq(0);
+
+        await vault.connect(beneficiary).withdraw();
+
+        const beneficiaryBalance = await USDC.balanceOf(beneficiary.address);
+        expect(usdcBalance).to.eq(beneficiaryBalance);
     });
+
 });
