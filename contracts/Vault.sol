@@ -72,11 +72,6 @@ contract Vault {
 
     /// Internals
 
-    function safeApprove(address token, address to, uint256 value) internal {
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(IERC20.approve.selector, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), "Not approved");
-    }
-
     function distributeFees() internal {
         if (stableBought > stableSold) {
             uint profit = stableBought - stableSold;
@@ -95,7 +90,7 @@ contract Vault {
         require(_token == WETH || _token == WBTC, "Vault: You can only buy WBTC or WETH");
 
         // Actual swap
-        safeApprove(USDC, address(SWAP_ROUTER), _amount);
+        require(IERC20(USDC).approve(address(SWAP_ROUTER), _amount), "Vault: Not approved");
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: USDC,
             tokenOut: _token,
@@ -115,7 +110,7 @@ contract Vault {
         require(sellingCrypto, "Vault: Selling crypto currency is no enabled");
         require(_token == WETH || _token == WBTC, "Vault: Invalid token, you can only sell WBTC or WETH");
 
-        safeApprove(_token, address(SWAP_ROUTER), _amount);
+        require(IERC20(_token).approve(address(SWAP_ROUTER), _amount), "Vault: Not approved");
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: _token,
             tokenOut: USDC,
@@ -144,7 +139,7 @@ contract Vault {
 
     // Beneficiary operations
 
-    function udateBeneficiary(address _beneficiary) external onlyBeneficiary {
+    function updateBeneficiary(address _beneficiary) external onlyBeneficiary {
         beneficiary = _beneficiary;
     }
 
