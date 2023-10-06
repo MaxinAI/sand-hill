@@ -168,6 +168,10 @@ describe("Vault Operations", function () {
         const beneficiaryBalanceAfter = await USDC.balanceOf(beneficiary.address);
         const beneficiaryProfit = profit - developerFee - fundFee;
         expect(beneficiaryBalanceAfter - beneficiaryBalanceBefore - usdcBalance).to.eq(beneficiaryProfit);
+        expect(beneficiaryProfit).to.gt(fundFee);
+        expect(fundFee).to.gt(developerFee);
+        expect(developerFee).to.gt(0);
+        expect(profit).to.eq(beneficiaryProfit + fundFee + developerFee);
     });
 
     it("Should not distribute fees when there is no profit", async () => {
