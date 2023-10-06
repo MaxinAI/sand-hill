@@ -1,15 +1,7 @@
 import {loadFixture} from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import {ethers} from "hardhat";
 import {expect} from "chai";
-import {
-    deployVaultManager, exchange,
-    getSigners,
-    SWAP_ROUTER,
-    SWAP_ROUTER_ADDRESS,
-    USDC, USDC_ADDRESS,
-    WETH,
-    WETH_ADDRESS
-} from "./common";
+import {deployVaultManager, exchange, getSigners, USDC, WETH, WETH_ADDRESS} from "./common";
 
 
 describe("Vault Deposit, Trade, Withdraw", function () {
@@ -63,7 +55,6 @@ describe("Vault Deposit, Trade, Withdraw", function () {
         expect(veryFinalUsdcBalance).to.be.gt(0n);
 
         await vault.connect(admin).unlock()
-
 
         const beneficiaryUsdcBalance = await USDC.balanceOf(beneficiary.address);
         await vault.connect(beneficiary).withdraw();

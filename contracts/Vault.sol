@@ -182,7 +182,7 @@ contract VaultManager {
     }
 
     function createVault(address beneficiary, uint expiry) external returns (address) {
-        require(msg.sender == admin, "Only admin can call this");
+        require(msg.sender == admin, "VaultManager: Only admin can create Vault");
         Vault vault = new Vault(admin, beneficiary, feeRecipient, developer, expiry);
         vaults.push(address(vault));
         return address(vault);
