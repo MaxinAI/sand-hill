@@ -47,7 +47,7 @@ describe("Vault", function () {
             beneficiary.address,
             feeRecipient.address,
             developer.address,
-            SWAP_ROUTER,
+            1000n,
         );
         return {vault, deployer, admin, beneficiary, feeRecipient, developer, other};
     }
@@ -76,7 +76,7 @@ describe("Vault", function () {
             await vaultManager.waitForDeployment();
             const {beneficiary} = await getSigners();
 
-            await vaultManager.connect(admin).createVault(beneficiary.address);
+            await vaultManager.connect(admin).createVault(beneficiary.address, 1000n);
 
             const vaultAddress = await vaultManager.vaults(0);
             expect(vaultAddress).to.not.equal(ethers.ZeroAddress);
@@ -127,7 +127,7 @@ describe("Vault", function () {
             const finalVaultEthBalance = await WETH.balanceOf(vaultAddress);
             expect(finalVaultEthBalance).to.be.gt(0n);
 
-            await vault.connect(admin).sellCrypto();
+            await vault.connect(admin).enableSell();
 
             await vault.connect(admin).sell(finalVaultEthBalance, 0n, WETH_ADDRESS)
 

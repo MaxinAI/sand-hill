@@ -11,16 +11,10 @@ interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
-interface IWETH is IERC20 {
-    function deposit() external payable;
-}
-
 contract Vault {
     ISwapRouter public immutable swapRouter;
-    uint public constant EXPIRY = 3 * 365 days;
-
     address public immutable admin;
-    address public immutable beneficiary;
+    address public beneficiary;
     address public immutable feeRecipient;
     address public immutable developer;
     uint public immutable expiration;
@@ -30,28 +24,35 @@ contract Vault {
     bool public sellingCrypto;
     bool public unlocked;
 
+    address public constant SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
 
-    uint24 public constant feeTier = 500;
+    uint24 public constant FEE_TIER = 500;
 
-    constructor(address _admin, address _beneficiary, address _feeRecipient, address _developer, address _swapRouter) {
+    constructor(
+        address _admin,
+        address _beneficiary,
+        address _feeRecipient,
+        address _developer,
+        uint _expiry
+    ) {
         admin = _admin;
         beneficiary = _beneficiary;
         feeRecipient = _feeRecipient;
         developer = _developer;
-        expiration = block.timestamp + EXPIRY;
-        swapRouter = ISwapRouter(_swapRouter);
+        expiration = block.timestamp + _expiry;
     }
 
     modifier onlyBeneficiary() {
-        require(msg.sender == beneficiary, "Only beneficiary can call this");
+        require(msg.sender == beneficiary, "Vault: Only beneficiary can call this");
         _;
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin can call this");
+        require(msg.sender == admin, "Vault: Only admin can call this");
         _;
     }
 
@@ -67,7 +68,7 @@ contract Vault {
         if (stableBought > stableSold) {
             uint profit = stableBought - stableSold;
             uint fee = (profit * 20) / 100;
-            uint developerFee = (profit * 20) / 100; // 20% goes to developer
+            uint developerFee = (fee * 20) / 100; // 20% from fee goes to developer
             uint fundFee = fee - developerFee; // 80% goes to fund address
             require(IERC20(USDC).transfer(feeRecipient, fundFee));
             require(IERC20(USDC).transfer(developer, developerFee));
@@ -76,59 +77,63 @@ contract Vault {
 
     /// Admin operations
 
-    function buy(uint _amount, uint _crypto, address _token) external onlyAdmin {
-        require(!sellingCrypto, "Already selling crypto");
-        require(_token == WETH || _token == WBTC, "Invalid token");
+    function buy(uint _amount, uint _expectedMin, address _token) external onlyAdmin {
+        require(!sellingCrypto, "Vault: You can only sell crypto currency");
+        require(_token == WETH || _token == WBTC, "Vault: You can only buy WBTC or WETH");
 
         // Actual swap
-        safeApprove(USDC, address(swapRouter), _amount);
+        safeApprove(USDC, address(SWAP_ROUTER), _amount);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: USDC,
             tokenOut: _token,
-            fee: feeTier,
+            fee: FEE_TIER,
             recipient: address(this),
             deadline: block.timestamp,
             amountIn: _amount,
-            amountOutMinimum: _crypto,
+            amountOutMinimum: _expectedMin,
             sqrtPriceLimitX96: 0
         });
-        swapRouter.exactInputSingle(params);
+        ISwapRouter(SWAP_ROUTER).exactInputSingle(params);
 
         stableSold += _amount;
     }
 
-    function sell(uint _crypto, uint _amount, address _token) external onlyAdmin {
-        require(sellingCrypto, "Not selling crypto");
-        require(_token == WETH || _token == WBTC, "Invalid token");
+    function sell(uint _amount, uint _expectedMin, address _token) external onlyAdmin {
+        require(sellingCrypto, "Vault: Selling crypto currency is no enabled");
+        require(_token == WETH || _token == WBTC, "Vault: Invalid token, you can only sell WBTC or WETH");
 
-        safeApprove(_token, address(swapRouter), _crypto);
+        safeApprove(_token, address(SWAP_ROUTER), _amount);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: _token,
             tokenOut: USDC,
-            fee: feeTier,
+            fee: FEE_TIER,
             recipient: address(this),
             deadline: block.timestamp,
-            amountIn: _crypto,
-            amountOutMinimum: _amount,
+            amountIn: _amount,
+            amountOutMinimum: _expectedMin,
             sqrtPriceLimitX96: 0
         });
-        uint amountOut = swapRouter.exactInputSingle(params);
+        uint amountOut = ISwapRouter(SWAP_ROUTER).exactInputSingle(params);
         stableBought += amountOut;
     }
 
-    function sellCrypto() external onlyAdmin {
-        require(!sellingCrypto, "Already selling crypto");
+    function enableSell() external onlyAdmin {
+        require(!sellingCrypto, "Vault: Selling crypto currency is already enabled");
         sellingCrypto = true;
     }
 
 
     function unlock() external onlyAdmin {
-        require(!unlocked, "Already unlocked");
+        require(!unlocked, "Vault: The vault is already unlocked");
         distributeFees();
         unlocked = true;
     }
 
     // Beneficiary operations
+
+    function udateBeneficiary(address _beneficiary) external onlyBeneficiary {
+        beneficiary = _beneficiary;
+    }
 
     function transferOut(address _token) internal {
         IERC20 tokenContract = IERC20(_token);
@@ -139,10 +144,10 @@ contract Vault {
     }
 
     function withdraw() external onlyBeneficiary {
-        require(unlocked || block.timestamp >= expiration, "Cannot withdraw now");
+        require(unlocked || block.timestamp >= expiration, "Vault: The vault is locked or not expired yet");
         if (!unlocked) {
-            unlocked = true;
             distributeFees();
+            unlocked = true;
         }
         transferOut(USDC);
         transferOut(WETH);
@@ -154,7 +159,6 @@ contract VaultManager {
     address public immutable admin;
     address public immutable feeRecipient;
     address public immutable developer;
-    address public constant swapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     address[] public vaults;
 
@@ -164,9 +168,9 @@ contract VaultManager {
         developer = _developer;
     }
 
-    function createVault(address beneficiary) external returns (address) {
+    function createVault(address beneficiary, uint expiry) external returns (address) {
         require(msg.sender == admin, "Only admin can call this");
-        Vault vault = new Vault(admin, beneficiary, feeRecipient, developer, swapRouter);
+        Vault vault = new Vault(admin, beneficiary, feeRecipient, developer, expiry);
         vaults.push(address(vault));
         return address(vault);
     }
