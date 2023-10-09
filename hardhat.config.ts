@@ -1,5 +1,9 @@
 import {HardhatUserConfig} from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "dotenv/config"
+
+const TEST_PROVIDER = `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`
+const GOERLI_PROVIDER = `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`
 
 const config: HardhatUserConfig = {
     solidity: {
@@ -9,12 +13,22 @@ const config: HardhatUserConfig = {
             },
         ]
     },
+    etherscan: {
+        apiKey: process.env.ETHERSCAN_KEY,
+    },
     networks: {
         hardhat: {
             forking: {
-                url: "https://goerli.infura.io/v3/3524ee82c6004aee98a63406525bdcb9",
+                url: TEST_PROVIDER,
             }
+        },
+        goerli: {
+            url: GOERLI_PROVIDER,
+            accounts: [process.env.PRIVATE_KEY]
         }
+    },
+    mocha: {
+        timeout: 100000000
     }
 };
 
