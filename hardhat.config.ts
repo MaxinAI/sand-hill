@@ -12,7 +12,7 @@ const config: HardhatUserConfig = {
     networks: {
         hardhat: {
             forking: {
-                url: "https://mainnet.infura.io/v3/3524ee82c6004aee98a63406525bdcb9",
+                url: "https://goerli.infura.io/v3/3524ee82c6004aee98a63406525bdcb9",
             }
         }
     }

@@ -7,13 +7,13 @@ const ERC20_ABI = [
     "function approve(address, uint) returns (bool)",
 ]
 
-export const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+export const WETH_ADDRESS = "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6"; //"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 export const WETH = new ethers.Contract(WETH_ADDRESS, [...ERC20_ABI, "function deposit() payable"], ethers.provider)
 
-export const WBTC_ADDRESS = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
+export const WBTC_ADDRESS = "0xC04B0d3107736C32e19F1c62b2aF67BE61d63a05"; //"0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
 export const WBTC = new ethers.Contract(WBTC_ADDRESS, ERC20_ABI, ethers.provider)
 
-export const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+export const USDC_ADDRESS = "0x07865c6E87B9F70255377e024ace6630C1Eaa37F"; //"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
 export const USDC = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, ethers.provider)
 
 export const SWAP_ROUTER_ADDRESS = "0xE592427A0AEce92De3Edee1F18E0157C05861564";

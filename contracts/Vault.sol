@@ -39,9 +39,9 @@ contract Vault {
 
     address public constant SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
-    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address public constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address public constant USDC = 0x07865c6E87B9F70255377e024ace6630C1Eaa37F; //0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant WETH = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6; //0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address public constant WBTC = 0xC04B0d3107736C32e19F1c62b2aF67BE61d63a05; //0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
 
     uint24 public constant FEE_TIER = 500;
 
